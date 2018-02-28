@@ -74,12 +74,12 @@ module Cylinder
 
         # ------------------------------------------------------------------------------
         job = update_setup(parms,obj);
-        solver = init_ns(job);
-        job = time_step(parms,job,solver)
+        solver_static = init_ns(job);
+        job = time_step(parms,job,solver_static)
         #x,y,u = post_proc[parms,job,solver,job.soln,"v [lab]",0]
 
         # ------------------------------------------------------------------------------
-        parms, job, solver;
+        parms, job, solver_static;
     end
 
 end

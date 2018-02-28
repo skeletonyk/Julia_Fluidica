@@ -24,10 +24,10 @@ function curl(s :: Array{Float64,2})
     m = size(s,1)
     n = size(s,2)
 
-    u = s[1:m,2:n]-s[1:m,1:n-1]
-    v = s[1:m-1,1:n]-s[2:m,1:n]
+    u :: Array{Float64,2} = s[1:m,2:n]-s[1:m,1:n-1]
+    v :: Array{Float64,2} = s[1:m-1,1:n]-s[2:m,1:n]
 
-    u,v
+    u, v
 end
 function lap(f :: Array{Float64,2})
     # discrete Laplacian with zero Dirichlet BC

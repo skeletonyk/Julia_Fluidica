@@ -47,11 +47,11 @@ function init_ns(job)
         #DST =1/sqrt(2*(n+1) * 2 * (m+1)) * plan_r2r(lam, FFTW.RODFT00)
         const solver.ainv_times   = w :: Array{Float64,2} -> 1/(4 * (n+1) * (m+1)) * IR2R * (lam .* (R2R*w))  #4/( (n+1) * (m+1)) * dst2d(lam.*dst2d(w, FFT_dst2d),FFT_dst2d) #r2r(lam.*r2r(w, FFTW.RODFT00), FFTW.RODFT00) #4/( (n+1) * (m+1)) * dst( (dst( lam.*(dst( (dst(w))')') ))')'; #r2r(lam.*r2r(w, FFTW.RODFT01), FFTW.RODFT10) #DST * ( lam .* (DST * w) );
         const solver.la_inv_times = w :: Array{Float64,2} ->  solver.g_times(solver.ainv_times(w))
-        job.z = schur_comp(job.dims, job.ec, solver.la_inv_times)
-        const job.z = Symmetric(job.z)
+        z = schur_comp(job.dims, job.ec, solver.la_inv_times)
+        const job.z = factorize(Symmetric(z))
 
-        solver.zinv_times = w :: Array{Float64,2} -> -job.z\w
-        job.cno = cond(job.z)
+        solver.zinv_times = w :: Array{Float64,2} -> job.z\(-w)
+        #job.cno = cond(job.z)
         solver.visc = w :: Array{Float64,2} -> (0.5*job.dt/job.r)*lap(w)
     toc()
     println("-------------- extra operators for ab2/cn scheme completed--------")
@@ -71,28 +71,43 @@ function init_ns(job)
 
     # nonlinear terms
     vel_a =
-    (w :: Array{Float64,2},t :: Float64 ,u :: Array{Float64,2},v :: Array{Float64,2})->
+    (w :: Array{Float64,2},t :: Float64)->
     velocity(w, t, job.ghatbig,
                 job.frame_rot, job.frame_xvel, job.frame_yvel,
-                wcrossx_x, wcrossx_y,FFT_big,IFFT_big, u, v)
+                wcrossx_x, wcrossx_y,FFT_big,IFFT_big)
 
+    solver.vel_a = vel_a
     solver.r1 =
-    (w :: Array{Float64,2},t :: Float64,u :: Array{Float64,2},v :: Array{Float64,2}) ->
-    -ctnonlin(w,t,vel_a,u,v)
-
+    (w :: Array{Float64,2},t :: Float64) -> -ctnonlin(w,t,vel_a)
 
     # Last bit
     solver.r2 = (t :: Float64) -> reshape([ -(job.frame_rot(t)* wcrossx_xb + job.frame_xvel(t)*wcrossx_xb);
                          -(job.frame_rot(t)* wcrossx_yb + job.frame_yvel(t)*wcrossx_yb) ], size(job.bdy,1)*2,1)
 
-    solver.step = (soln :: Soln,slvr::Solver) -> cn_ab2(soln, slvr)
+    solver.step = cn_ab2
     solver.speed = (soln :: Soln,frame) -> vel_out(soln,3,job.ghatbig,
             job.frame_rot, job.frame_xvel, job.frame_yvel,
             wcrossx_x, wcrossx_y,FFT_big,IFFT_big)
-    solver.cfl = (soln::Soln) -> solver.dt * maximum(maximum(vel_out(soln,3,job.ghatbig,
+    solver.cfl = soln::Soln -> solver.dt * maximum(maximum(vel_out(soln,3,job.ghatbig,
             job.frame_rot, job.frame_xvel, job.frame_yvel,
             wcrossx_x,wcrossx_y, FFT_big,IFFT_big) ))
-    solver;
+
+    solver_static = Solver_static(solver.dt,
+            solver.g_times,
+            solver.ainv_times,
+            solver.la_inv_times,
+            solver.zinv_times,
+            solver.visc,
+            solver.b_times,
+            solver.bt_times,
+            solver.r1,
+            solver.r2,
+            solver.step,
+            solver.speed,
+            solver.cfl,
+            solver.vel_a)
+
+    return solver_static
 end
 
 function apply_lgf(w :: Array{Float64,2}, lgfhat :: Array{Complex64,2}, FFT::FFTW_Type, IFFT::IFFTW_Type)
@@ -101,7 +116,7 @@ function apply_lgf(w :: Array{Float64,2}, lgfhat :: Array{Complex64,2}, FFT::FFT
   padded_w =
   [ w zeros(M,N-1); zeros(M-1,N) zeros(M-1,N-1) ]
   # Tranform, multiply, inverse tranform [convolution]
-  s_tmp :: Array{Float64,2} = (IFFT * ( (FFT*padded_w) .*lgfhat ))#real(ifft(fft(padded_w).*lgfhat)) #IFFT * ( (FFT*padded_w) .*lgfhat )
+  s_tmp = (IFFT * ( (FFT*padded_w) .*lgfhat ))#real(ifft(fft(padded_w).*lgfhat)) #IFFT * ( (FFT*padded_w) .*lgfhat )
   return s_tmp[M:end,N:end];
 end
 
@@ -112,12 +127,12 @@ function apply_lgf_big(w :: Array{Float64,2}, lgfhat :: Array{Complex64,2}, FFT:
   padded_w =
   [ w2 zeros(M,N-1); zeros(M-1,N) zeros(M-1,N-1) ]
   # Tranform, multiply, inverse tranform [convolution]
-  s_tmp :: Array{Float64,2} = (IFFT * ( (FFT*padded_w) .*lgfhat ))#real(ifft(fft(padded_w).*lgfhat)) #IFFT * ( (FFT*padded_w) .*lgfhat )
+  s_tmp = (IFFT * ( (FFT*padded_w) .*lgfhat ))#real(ifft(fft(padded_w).*lgfhat)) #IFFT * ( (FFT*padded_w) .*lgfhat )
   return s_tmp[M:end,N:end];
 end
 
 
-function schur_comp(mn, ec, opr :: Function)
+function schur_comp(mn, ec::AbstractArray, opr :: Function)
   nb = size(ec,1)
   f = zeros(nb,nb)
 

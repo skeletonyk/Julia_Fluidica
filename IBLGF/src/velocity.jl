@@ -1,8 +1,7 @@
 function velocity(w :: Array{Float64,2}, time :: Float64, lgfhat :: Array{Complex64,2},
     frame_rot :: Function, frame_xvel :: Function, frame_yvel :: Function,
     wcrossx_x :: Array{Float64,2}, wcrossx_y :: Array{Float64,2},
-    FFT_big :: FFTW_Type, IFFT_big :: IFFTW_Type,
-    u :: Array{Float64,2}, v :: Array{Float64,2})
+    FFT_big :: FFTW_Type, IFFT_big :: IFFTW_Type)
 
        # velocity in various reference frames
        ufr = frame_rot(time).* wcrossx_x + frame_xvel(time).*ones(size(wcrossx_x))
@@ -16,15 +15,14 @@ function velocity(w :: Array{Float64,2}, time :: Float64, lgfhat :: Array{Comple
        u, v = curl(s)
        u = u - ufr
        v = v - vfr
-       nothing
-       #u,v
+
+       return u,v
 end
 
-function ctnonlin(w :: Array{Float64,2},time::Float64,absvel::Function,
-    u::Array{Float64,2},v::Array{Float64,2})
+@inline function ctnonlin(w :: Array{Float64,2},time::Float64,absvel::Function)
     #nx,ny = nonlin(w,time,absvel);
     #curltx(nx)+curlty(ny);
-    absvel(w, time, u, v);  # accelerating frame velocity computed with a buffer layer of cells added to w [make sure to set up vel_a with appropriate lgf]
+    u,v = absvel(w, time);  # accelerating frame velocity computed with a buffer layer of cells added to w [make sure to set up vel_a with appropriate lgf]
 
     #wx = avg_wx(w);  # averages in y to x-cell edges
     #wy = avg_wy(w);  # averages in x to y-cell edges
@@ -91,15 +89,15 @@ function vel_out(soln:: Soln,comp,lgfhat,frame_rot, frame_xvel, frame_yvel, wcro
 # velocity [comp=1,2,3 for u, v, or speed]  (frame="l','a','r" for lab, accelerating, or relative vel.).
     #println("test")
     #println(soln.v)
-    velocity(soln.w,soln.t,lgfhat,
+    u,v = velocity(soln.w,soln.t,lgfhat,
         frame_rot, frame_xvel, frame_yvel,
-        wcrossx_x,wcrossx_y,FFT_big,IFFT_big, soln.u,soln.v)
+        wcrossx_x,wcrossx_y,FFT_big,IFFT_big)
     if comp==1
-        a = avg_x(soln.u)
+        a = avg_x(u)
     elseif comp==2
-        a = avg_y(soln.v)
+        a = avg_y(v)
     else
-        a = sqrt.( avg_x(soln.u).^2 + avg_y(soln.v).^2 )
+        a = sqrt.( avg_x(u).^2 + avg_y(v).^2 )
     end
 
     return a

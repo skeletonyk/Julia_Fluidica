@@ -1,4 +1,4 @@
-function cn_ab2(s :: Soln, h :: Solver)
+function cn_ab2(w :: Array{Float64,2}, t :: Float64, h :: Solver_static, first::Bool, r1old::Array{Float64,2})
 # Split Crank-Nicholson Adams-Bashforth scheme for DAE (including nested soln.
 # of KKT system())
 #
@@ -32,28 +32,35 @@ function cn_ab2(s :: Soln, h :: Solver)
 # note that the whole trick is to do have function handles that
 # apply these operators as efficiently as possible!!!
 
-    snew = Soln()
-    snew.u = s.u;
-    snew.v = s.v;
-    println(size(s.u))
+    #snew = Soln()
+    #snew.u = s.u;
+    #snew.v = s.v;
+    #w :: Array{Float64,2} = (s.w)
+    #t :: Float64 = s.t
+
     print("non-linear ->")
-    @time r1 = h.r1(s.w, s.t, snew.u, snew.v);  # compute current nonlinear term
-    if isdefined(s,:r1old)
-        rhs = h.dt*(1.5*r1 - 0.5*s.r1old);  # add old nonlinear term
+    @time r1 = h.r1(w, t);  # compute current nonlinear term
+
+    rhs :: Array{Float64,2}  = zeros(size(r1))
+
+    if !first
+        rhs= h.dt*(1.5 * r1 - 0.5 * r1old);  # add old nonlinear term
     else
         rhs = h.dt*r1;  # use Euler step for first timestep
     end
-    snew.r1old = r1;  # save current nonlinear term for next step
+    #snew.r1old = r1;  # save current nonlinear term for next step
+    rhs = rhs + w + h.visc(w)
 
-    rhs = rhs + s.w + h.visc(s.w)
     print("a_inv      ->")
     @time wstar = h.ainv_times(rhs)
     print("g_times    ->")
-    @time tmp = h.b_times(h.g_times(wstar))-h.r2(s.t)
+    @time tmp = h.b_times(h.g_times(wstar))-h.r2(t)
     print("z_inv      ->")
-    @time snew.f = h.zinv_times(tmp )./h.dt
-    snew.w = wstar - h.ainv_times( h.dt*h.bt_times( snew.f ))
-    snew.t = s.t + h.dt
+    @time f = h.zinv_times(tmp )./h.dt
 
-    return snew
+    w = wstar - h.ainv_times( h.dt*h.bt_times( f ))
+    t = t + h.dt
+
+    w,t,f,r1
+
 end
