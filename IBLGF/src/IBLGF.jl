@@ -1,5 +1,6 @@
 module IBLGF
     using Util
+    using Devectorize
     using FFTW
     using Ddfs
     using Lgf
@@ -13,9 +14,39 @@ module IBLGF
         t :: Float64
         u :: Array{Float64,2}
         v :: Array{Float64,2}
+        it :: Int64
         Soln() = new()
     end
 
+    struct Job_static
+        ddf :: Function
+        pts :: Array{Float64,2}
+        dims :: Array{Int64,1}
+        domain :: Array{Float64,2}
+        center :: Array{Float64,2}
+        x  :: Array{Float64,2}
+        y :: Array{Float64,2}
+        r :: Float64
+        bdy :: Array{Float64,2}
+        dt :: Float64
+        nstp ::Int64
+        times :: AbstractVector
+        g :: Array{Float64,2}
+        ghat :: Array{Complex64,2}
+        ghatbig :: Array{Complex64,2}
+        ghat_p :: Array{Complex64,2}
+        etx :: AbstractSparseMatrix
+        ety :: AbstractSparseMatrix
+        ec  :: AbstractSparseMatrix
+        #t   :: Array{Float64,2}
+        #z   ::Base.LinAlg.BunchKaufman{Float64,Array{Float64,2}}
+        frame_rot :: Function
+        frame_xvel :: Function
+        frame_yvel :: Function
+        cno :: Float64
+        #runtime
+        checkpoint :: Int64
+    end
     mutable struct Job
         ddf :: Function
         pts :: Array{Float64,2}
@@ -26,10 +57,8 @@ module IBLGF
         y :: Array{Float64,2}
         r :: Float64
         bdy :: Array{Float64,2}
-        soln :: Soln
         dt :: Float64
         nstp ::Int64
-        it :: Int64
         times :: AbstractVector
         g :: Array{Float64,2}
         ghat :: Array{Complex64,2}
@@ -38,8 +67,8 @@ module IBLGF
         etx :: AbstractSparseMatrix
         ety :: AbstractSparseMatrix
         ec  :: AbstractSparseMatrix
-        t   :: Array{Float64,2}
-        z   ::Base.LinAlg.BunchKaufman{Float64,Array{Float64,2}}
+        #t   :: Array{Float64,2}
+        #z   ::Base.LinAlg.BunchKaufman{Float64,Array{Float64,2}}
         frame_rot :: Function
         frame_xvel :: Function
         frame_yvel :: Function
@@ -48,6 +77,7 @@ module IBLGF
         checkpoint :: Int64
         Job() = new()
     end
+
 
     mutable struct Solver
         dt :: Float64

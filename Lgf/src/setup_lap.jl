@@ -28,12 +28,12 @@ function setup_lap(mn)
     else   # build g
         println("Building table for LGF")
         for i=1:m
-            for j=1:minimum([i,n])
+            @fastmath @inbounds @simd for j=1:minimum([i,n])
                 g[i,j] = ker_lap(i-1,j-1)
             end
         end
         for i=1:n
-            for j=i+1:n
+            @fastmath @inbounds @simd for j=i+1:n
                 g[i,j] = g[j,i]
             end
         end

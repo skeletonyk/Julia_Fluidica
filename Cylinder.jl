@@ -1,4 +1,4 @@
-module Cylinder
+@fastmath module Cylinder
     # Add path
     export job_run
     push!(LOAD_PATH, pwd())
@@ -22,12 +22,16 @@ module Cylinder
     end
 
     mutable struct Tstep
-        auto; cfl
+        auto :: Int64; cfl :: Float64
         Tstep() = new()
     end
 
     mutable struct Parms
-        solver;buffer;axlim;ppl;orig;rey;tstep;tstart;tend;tinc;ibph;ddf;hzn
+        solver :: Int64;
+        buffer :: Int64; axlim :: Array{Float64,2};
+        ppl :: Float64;
+        orig :: Array{Float64,2};rey :: Float64;tstep :: Tstep;tstart :: Float64;tend :: Float64;tinc :: Float64;ibph :: Float64; ddf :: String;
+        hzn :: Array{Float64,1}
         base :: Function
         ic :: Function
         mot :: Mot
@@ -36,7 +40,7 @@ module Cylinder
 
     function job_run(ppl)
         # ------------------------------------------------------------------------------
-        box = 3
+        box = 3.0
         rey = 10
         cfl = .2
         ibph = 2
@@ -53,17 +57,17 @@ module Cylinder
         parms.tend = 1;         # ending time
         parms.tinc = 0.1         # time increment
         parms.mot = Mot()
-        parms.mot.x = t -> 0 # zeros(size(t))         # motion [velocity] of body in x dir()
-        parms.mot.y = t -> 0 # zeros(size(t))         # motion [velocity] of body in y dir()
-        parms.mot.r = t -> 1 # ones(size(t))         # motion [rotation rate] of body in theta dir()
+        parms.mot.x = t :: Float64 -> 0.0 ::Float64 # zeros(size(t))         # motion [velocity] of body in x dir()
+        parms.mot.y = t :: Float64 -> 0.0 :: Float64 # zeros(size(t))         # motion [velocity] of body in y dir()
+        parms.mot.r = t :: Float64 -> 1.0 ::Float64 # ones(size(t))         # motion [rotation rate] of body in theta dir()
         parms.rey = rey;         # Reynolds number based on L
         parms.tstep = Tstep()
         parms.tstep.auto = 1;         # automatically choose dt
         parms.tstep.cfl = cfl         #
         parms.ibph = ibph         # IB point spacing [rel. to grid()]
-        parms.base = (x,y) -> zeros(size(x))         # base solution/initial condition
+        parms.base = (x :: Array{Float64,2},y :: Array{Float64,2}) -> zeros(size(x))         # base solution/initial condition
         parms.ddf = ddf         # discrete delta function()
-        parms.ic = (x,y) -> zeros(size(x))         # base solution/initial condition
+        parms.ic = (x :: Array{Float64,2},y :: Array{Float64,2}) -> zeros(size(x))         # base solution/initial condition
         parms.hzn = [0, 0.1, 0.1]
 
         # ------------------------------------------------------------------------------
@@ -75,7 +79,7 @@ module Cylinder
         # ------------------------------------------------------------------------------
         job = update_setup(parms,obj);
         solver_static = init_ns(job);
-        job = time_step(parms,job,solver_static)
+        soln = time_step(parms,job,solver_static)
         #x,y,u = post_proc[parms,job,solver,job.soln,"v [lab]",0]
 
         # ------------------------------------------------------------------------------

@@ -1,31 +1,36 @@
 function time_step(parms, job, solver)
 #
-    tic()
-    job.soln.w = zeros(job.dims[1],job.dims[2])
-    job.soln.u = zeros(job.dims[1]+2,job.dims[2]+1)
-    job.soln.v = zeros(job.dims[1]+1,job.dims[2]+2)
-    job.soln.r1 = zeros(job.dims[1],job.dims[2])
-    job.soln.t = 0
+    # Inital soln
+    soln = Soln()
+    soln.t = parms.hzn[1];
+    soln.w = zeros(job.dims[1],job.dims[2])
+    soln.u = zeros(job.dims[1]+2,job.dims[2]+1)
+    soln.v = zeros(job.dims[1]+1,job.dims[2]+2)
+    soln.r1 = zeros(job.dims[1],job.dims[2])
+    soln.t = 0
+    soln.it = 0
 
     first::Bool = true
-    for k=1:job.nstp
-        w = deepcopy(job.soln.w)
-        t = job.soln.t
-        r1old = deepcopy(job.soln.r1)
-        @time @fastmath job.soln.w, job.soln.t, job.soln.f, job.soln.r1  = solver.step(w, t, solver, first, r1old)
-        job.it = job.it + 1
-        cfl:: Float64 = solver.cfl(job.soln)
+    tic()
+    for k=1:100#job.nstp
+        w = copy(soln.w)
+        t = soln.t
+        r1old = deepcopy(soln.r1)
+        @profile @time soln.w, soln.t, soln.f, soln.r1  = solver.step(w, t, solver, first, r1old)
 
-        if cfl > 1.5
-            error("The CFL has become too large and Fluidica cannot continue().  Consider choosing a lower time step so that CFL < 1.5")
-            return
-        end
+        soln.it = soln.it + 1
+        #cfl = solver.cfl(soln)
+
+        #if cfl > 1.5
+        #    error("The CFL has become too large and Fluidica cannot continue().  Consider choosing a lower time step so that CFL < 1.5")
+        #    return
+        #end
         first = false
     end
     toc()
     #job.runtime = toc()
-    job.checkpoint = job.checkpoint+1
+    #soln.checkpoint = soln.checkpoint+1
     #job.data[job.checkpoint] = job.soln
 
-    return job
+    return soln
 end

@@ -38,8 +38,9 @@ function cn_ab2(w :: Array{Float64,2}, t :: Float64, h :: Solver_static, first::
     #w :: Array{Float64,2} = (s.w)
     #t :: Float64 = s.t
 
-    print("non-linear ->")
-    @time r1 = h.r1(w, t);  # compute current nonlinear term
+    #print("non-linear ->")
+    #@time
+    r1 :: Array{Float64,2} = h.r1(w, t);  # compute current nonlinear term
 
     rhs :: Array{Float64,2}  = zeros(size(r1))
 
@@ -51,12 +52,15 @@ function cn_ab2(w :: Array{Float64,2}, t :: Float64, h :: Solver_static, first::
     #snew.r1old = r1;  # save current nonlinear term for next step
     rhs = rhs + w + h.visc(w)
 
-    print("a_inv      ->")
-    @time wstar = h.ainv_times(rhs)
-    print("g_times    ->")
-    @time tmp = h.b_times(h.g_times(wstar))-h.r2(t)
-    print("z_inv      ->")
-    @time f = h.zinv_times(tmp )./h.dt
+    #print("a_inv      ->")
+    #@time
+    wstar = h.ainv_times(rhs)
+    #print("g_times    ->")
+    #@time
+    tmp = h.b_times(h.g_times(wstar))-h.r2(t)
+    #print("z_inv      ->")
+    #@time
+    f = h.zinv_times(tmp )./h.dt
 
     w = wstar - h.ainv_times( h.dt*h.bt_times( f ))
     t = t + h.dt
