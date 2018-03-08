@@ -1,6 +1,6 @@
 #using Devectorize
 
-function velocity(w :: Array{Float64,2}, w_buffer :: AbstractArray{Float64,2}, time :: Float64, lgfhat :: Array{Complex64,2},
+function velocity(w :: Array{Float64,2}, w_buffer :: Array{Float64,2}, s_buffer :: Array{Float64,2}, time :: Float64, lgfhat :: Array{Complex64,2},
     frame_rot :: Function, frame_xvel :: Function, frame_yvel :: Function,
     wcrossx_x :: Array{Float64,2}, wcrossx_y :: Array{Float64,2},
     FFT_big :: FFTW_Type, IFFT_big :: IFFTW_Type)
@@ -12,7 +12,7 @@ function velocity(w :: Array{Float64,2}, w_buffer :: AbstractArray{Float64,2}, t
        #M = size(w,1)+2;
        #N = size(w,2)+2;
        #w2 = [ zeros(1,N); [ zeros(M-2,1) w zeros(M-2,1)]; zeros(1,N)]
-       s = -apply_lgf_big(w, w_buffer,lgfhat, FFT_big, IFFT_big)
+       s = -apply_lgf_big(w, w_buffer, s_buffer,lgfhat, FFT_big, IFFT_big)
        u, v = curl(s)
        u = u - ufr
        v = v - vfr
@@ -33,7 +33,7 @@ function ctnonlin(w :: Array{Float64,2},time::Float64,absvel::Function)
     # uu = avg(u);     # averages u 4 nearest neighbors to y-cell edges
     #t1 = curltx(avg_wx(-w).*avg(v))
     #t2 = curlty(avg_wy(w).*avg(u))
-    return (curltx(-avg_wx(w).*avg(v)) .+ curlty(avg_wy(w).*avg(u)))
+    return (curltx(-avg_wx(w).*avg(v)) .+ curlty(avg_wy(w).*avg(u))) :: Array{Float64,2}
 
 end
 
@@ -103,7 +103,8 @@ function avg(f :: Array{Float64,2})
 end
 
 
-function vel_out(soln:: Soln,comp,lgfhat,frame_rot, frame_xvel, frame_yvel, wcrossx_x,wcrossx_y,FFT_big,IFFT_big, w_buffer :: AbstractArray{Float64,2})
+function vel_out(soln:: Soln,comp,lgfhat,frame_rot, frame_xvel, frame_yvel,
+     wcrossx_x,wcrossx_y,FFT_big,IFFT_big, w_buffer :: AbstractArray{Float64,2}, s_buffer :: Array{Float64,2})
 # velocity [comp=1,2,3 for u, v, or speed]  (frame="l','a','r" for lab, accelerating, or relative vel.).
     #println("test")
     #println(soln.v)

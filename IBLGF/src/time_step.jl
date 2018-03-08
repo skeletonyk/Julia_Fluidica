@@ -13,11 +13,12 @@ function time_step(parms, job, solver)
     first::Bool = true
     tic()
     for k=1:100#job.nstp
-        w = copy(soln.w)
-        t = soln.t
-        r1old = deepcopy(soln.r1)
-        @profile @time soln.w, soln.t, soln.f, soln.r1  = solver.step(w, t, solver, first, r1old)
+        #w = copy(soln.w)
+        #t = soln.t
 
+        r1old = copy(soln.r1)
+        #@time #soln.w, soln.t, soln.f, soln.r1  =
+        @time solver.step(soln, solver, first)
         soln.it = soln.it + 1
         #cfl = solver.cfl(soln)
 

@@ -1,4 +1,4 @@
-@fastmath module Cylinder
+module Cylinder
     # Add path
     export job_run
     push!(LOAD_PATH, pwd())
@@ -11,6 +11,7 @@
     using Lgf
     using IBLGF
     using FFTW
+    using BenchmarkTools, Compat
 
 
     # DataTypes
@@ -83,7 +84,7 @@
         #x,y,u = post_proc[parms,job,solver,job.soln,"v [lab]",0]
 
         # ------------------------------------------------------------------------------
-        parms, job, solver_static;
+        parms, job, solver_static, soln;
     end
 
 end
