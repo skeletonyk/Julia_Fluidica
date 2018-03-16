@@ -1,4 +1,6 @@
+#__precompile__()
 module Cylinder
+
     # Add path
     export job_run
     push!(LOAD_PATH, pwd())
@@ -84,7 +86,8 @@ module Cylinder
         #x,y,u = post_proc[parms,job,solver,job.soln,"v [lab]",0]
 
         # ------------------------------------------------------------------------------
-        parms, job, solver_static, soln;
+        #parms, job, solver_static, soln;
+        nothing
     end
 
 end

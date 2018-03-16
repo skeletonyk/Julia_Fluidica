@@ -7,10 +7,14 @@ function ec_mat(mn, etx, ety)
     nb = size(etx,2)
     ctxetx = spzeros(mn[1]*mn[2],nb)
     ctyety = spzeros(mn[1]*mn[2],nb)
+    tmp = zeros(mn[1], mn[2])
 
     for k=1:nb
-        ctxetx[:,k] = reshape( curltx(reshape(full(etx[:,k]),mn[1],mn[2]+1)), prod(mn), 1)
-        ctyety[:,k] = reshape( curlty(reshape(full(ety[:,k]),mn[1]+1,mn[2])), prod(mn), 1)
+        curltx(reshape(full(etx[:,k]),mn[1],mn[2]+1),tmp)
+        ctxetx[:,k] = reshape(tmp, prod(mn), 1)
+
+        curlty(reshape(full(ety[:,k]),mn[1]+1,mn[2]),tmp)
+        ctyety[:,k] = reshape(tmp, prod(mn), 1)
     end
 
     return [ctxetx' ; ctyety']

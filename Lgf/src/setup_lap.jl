@@ -1,7 +1,6 @@
 using MAT
 
 function setup_lap(mn)
-    println(typeof(mn))
     m = maximum(mn)
     n = minimum(mn)
     g = zeros(m,n)
@@ -46,11 +45,12 @@ function setup_lap(mn)
     return g
 end
 
-function transform_lgf(lgf)
-# padded fft of LGF
-lgf_large =
+function transform_lgf(lgf :: Array{Float64,2})
+  # padded fft of LGF
+  lgf_large =
   [ flipdim(flipdim(lgf[2:end,2:end],1),2) flipdim(lgf[2:end,:],1);
     flipdim(lgf[:,2:end],2) lgf ]
-# Tranform augmented table
- return rfft( lgf_large )
+  # Tranform augmented table
+  tmp = rfft(lgf_large)
+  return tmp
 end

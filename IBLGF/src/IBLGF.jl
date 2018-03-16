@@ -32,9 +32,9 @@ module IBLGF
         nstp ::Int64
         times :: AbstractVector
         g :: Array{Float64,2}
-        ghat :: Array{Complex64,2}
-        ghatbig :: Array{Complex64,2}
-        ghat_p :: Array{Complex64,2}
+        ghat :: Array{Complex{Float64},2}
+        ghatbig :: Array{Complex{Float64},2}
+        ghat_p :: Array{Complex{Float64},2}
         etx :: AbstractSparseMatrix
         ety :: AbstractSparseMatrix
         ec  :: AbstractSparseMatrix
@@ -61,9 +61,9 @@ module IBLGF
         nstp ::Int64
         times :: AbstractVector
         g :: Array{Float64,2}
-        ghat :: Array{Complex64,2}
-        ghatbig :: Array{Complex64,2}
-        ghat_p :: Array{Complex64,2}
+        ghat :: Array{Complex{Float64},2}
+        ghatbig :: Array{Complex{Float64},2}
+        ghat_p :: Array{Complex{Float64},2}
         etx :: AbstractSparseMatrix
         ety :: AbstractSparseMatrix
         ec  :: AbstractSparseMatrix
@@ -119,6 +119,7 @@ module IBLGF
     FFTW_Type = Base.DFT.FFTW.rFFTWPlan{Float64,-1,false,2}
     IFFTW_Type = Base.DFT.ScaledPlan{Complex{Float64},Base.DFT.FFTW.rFFTWPlan{Complex{Float64},1,false,2},Float64}
 
+    include("buffer_depot.jl")
     include("et_mat.jl")
     include("ec_mat.jl")
     include("update_setup.jl")
