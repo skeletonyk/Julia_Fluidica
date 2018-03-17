@@ -35,24 +35,35 @@ function curl(s :: Array{Float64,2}, u_out :: Array{Float64,2}, v_out :: Array{F
     end
     nothing
 end
-function lap(f :: Array{Float64,2}, f_out :: Array{Float64,2})
+function lap(f :: Array{Float64,2}, f_out :: Array{Float64,2}, sc::Float64)
     # discrete Laplacian with zero Dirichlet BC
 
     m = size(f,1)
     n = size(f,2)
 
-    fext :: Array{Float64,2} = [ zeros(1,n+2); [ zeros(m,1) f zeros(m,1)]; zeros(1,n+2)]
+    #fext :: Array{Float64,2} = [ zeros(1,n+2); [ zeros(m,1) f zeros(m,1)]; zeros(1,n+2)]
 
-    [-4*fext[i+1,j+1] + fext[i,j+1] + fext[i+2,j+1] + fext[i+1,j] + fext[i+1,j+2] for i = 1 : m, j = 1 : n]
+    #[-4*fext[i+1,j+1] + fext[i,j+1] + fext[i+2,j+1] + fext[i+1,j] + fext[i+1,j+2] for i = 1 : m, j = 1 : n]
 
     for i = 2 : m-1, j = 2 : n-1
-        f_out[i,j] = -4*f[i,j] + f[i-1,j] + fext[i+1,j] + fext[i,j-1] + fext[i,j+1]
+        f_out[i,j] = -4*f[i,j] + f[i-1,j] + f[i+1,j] + f[i,j-1] + f[i,j+1]
     end
 
     for j = 2 : n-1
-        f_out[1,j] = -4*f[1,j] + f[2,j] + fext[i,j-1] + fext[i,j+1]
+        f_out[1,j] = -4*f[1,j] + f[2,j] + f[1,j-1] + f[1,j+1]
+        f_out[m,j] = -4*f[m,j] + f[m-1,j] + f[m,j-1] + f[m,j+1]
     end
 
-    #-4*fext[2:m+1,2:n+1] + fext[1:m,2:n+1]+fext[3:m+2,2:n+1] + fext[2:m+1,1:n]+fext[2:m+1,3:n+2]
+    for i = 2:m-1
+        j = 1
+        f_out[i,j] = -4*f[i,j] + f[i-1,j] + f[i+1,j] + f[i,j+1]
+        j = n
+        f_out[i,j] = -4*f[i,j] + f[i-1,j] + f[i+1,j] + f[i,j-1]
+    end
 
+        f_out[1,1] = -4*f[1,1] + f[2,1] + f[1,2]
+        f_out[1,n] = -4*f[1,n] + f[2,n] + f[1,n-1]
+        f_out[m,1] = -4*f[m,1] + f[m-1,1] + f[m,2]
+        f_out[m,n] = -4*f[m,n] + f[m-1,n] + f[m,n-1]
+    f .*= sc
 end

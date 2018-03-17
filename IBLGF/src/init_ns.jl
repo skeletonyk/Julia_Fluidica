@@ -66,7 +66,7 @@ function init_ns(job:: Job_static)
         z = factorize(Symmetric(z))
         solver.zinv_times = w :: Array{Float64,2} -> z\(-w)
         #job.cno = cond(job.z)
-        solver.visc = (w :: Array{Float64,2}, w_out :: Array{Float64,2}) -> lap(w, w_out,0.5*job.dt/job.r)
+        solver.visc = (w :: Array{Float64,2}, w_out :: Array{Float64,2}) -> lap(w, w_out, 0.5*job.dt/job.r)
     toc()
     println("-------------- extra operators for ab2/cn scheme completed--------")
     # extra operators FOR ab2/cn scheme / end
